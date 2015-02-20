@@ -1,0 +1,54 @@
+#mapping.py requires storage of raw qseq data in qseq/ and pre-formated reference sequence in Fasta/
+#format the reference sequence by: bwa index [ref seq file]
+#Two ref seqs is needed since of redundancy of the amplicon approach
+#mapping.py requires pre-created folder fastq/; tmp/; Json/; Mut/;
+#Output files include 3 files, .fq file, .json file and .mut file
+#1. unzip the qseq raw data in qseq/
+#2. convert the qseq data to fastq data (.fq) and store in fastq/; this function is cope with qseq2fq.sh
+#3. bwa align the fastq read data; need to modify for different projects
+#4. format convertion from .sai -> .sam -> .bam -> .json; .sai, .sam, and .bam are in tmp/; .json will be stored in Json/
+#5. identify mutations from .json and store in .mut1 or .mut2 depending on the reference in Mut/ in the format of [ReadID, "\t", SegID, "\t", Barcode, "\t", MutationList]
+#Example of Mutation list: WT or A10C_T25A or C80G
+#6. Combine .mut1 and .mut2 in to .mut and then delete .mut1 and .mut2
+#7. remove everything in tmp/ folder including the .sai, .sam and .bam files
+#8. zip the qseq raw data in qseq
+python mapping.py
+
+#pairing.py pair the reads from the reverse and forward reads
+#requires a pre-created folder tmp/ and paired/
+#1. regular pairing by consecutive lines
+#2. store the final output in .pe in paired/
+python pairing
+
+#Categorizing.sh categorized into amplicons 0 to 12
+#requires a pre-created folder ../ErrorCorrection/data/
+bash Categorizing.sh
+
+#ErrorCorrect.py
+#should work in ../ErrorCorrection/
+#requires a pre-created folder errorcorrect/
+#eliminate the junk in the file generated in Categorizing.sh
+#Sort the file according to barcode, might require a lot of memory depends ont he file size
+#Do the errorcorrection according to binomial exact test
+#Final result file formated as: [Segment&BarcodeTag, "\t", ClusterSizeCount, "\t", MutationName, "\t", MutationOccurrenceCount, "\t", p-value]
+python ErrorCorrect.py
+
+#PreAssemblyFormat.py
+#requires a pre-created folder conflated/
+#cutoff by percentage (70%,80%,90%,etc), some reads may have no information provided if none of the mutant or WT is above the cutoff percentage
+#filterout the primer sequence (using the file PrimerInfo)
+#adjust the position refering to the reference (using the file PrimerInfo)
+python PreAssemblyFormat.py
+
+#GeneAssembly.py
+#requires a pre-created folder result/
+#output filename has to be stated in the script
+#create a table with n columns, first column is the ID (barcode), last column is the number of informative frags present
+python GeneAssembly.py
+
+#SeqTagging.py
+#Should work in ../General/
+#requires pre-created folders data/ and tmp/
+#count all the unique sequences and filter by occurrence
+#Output a Pos file which contains all the positions with mutations
+python SeqTagging.py
